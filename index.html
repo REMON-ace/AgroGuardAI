@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AgroGuard AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- NAVBAR -->
+<header class="navbar">
+    <div class="nav-left" onclick="showSection('home')">
+        <span class="logo">🍀</span>
+        <span class="brand">AgroGuard AI</span>
+    </div>
+
+    <div class="nav-right">
+        <button onclick="showSection('home')">Home</button>
+        <button onclick="showSection('plantCare')">Plant Care</button>
+        <button onclick="showSection('liveDetect')">Live Detect</button>
+        <button onclick="showSection('myProfile')">My Profile</button>
+    </div>
+</header>
+
+
+
+<!-- HOME -->
+<section id="home" class="page-section">
+    <section class="hero">
+    <div class="hero-content">
+        <h1>SMART PLANT IDENTIFICATION<br> & <br>CARE</h1>
+    <div class="card">
+        <label class="upload-box">
+            <input type="file" accept="image/*">
+            <span id="up">📷 Upload Plant Image</span>
+        </label>
+        <button>Find About the Plant</button>
+    </div>
+        <button onclick="showTab('care')">Explore Plant Care</button>
+    </div>
+</section>
+<section class="plant-marquee">
+    <div class="marquee-track">
+        <img src="tomato.jpg" />
+        <img src="potato.jpg" />
+        <img src="Maize.jpg" />
+        <img src="Rice.jpg" />
+        <img src="wheat.jpg" />
+        <img src="cotton.jpg" />
+        
+         <img src="tomato.jpg" />
+        <img src="potato.jpg" />
+        <img src="Maize.jpg" />
+        <img src="Rice.jpg" />
+        <img src="wheat.jpg" />
+        <img src="cotton.jpg" />
+    </div>
+    </div>
+</section>
+<section class="quick-login">
+    <h2>Save Your Plant Searches</h2>
+    <p>Login to bookmark plants and track your activity.</p>
+
+    <div class="auth-box small">
+        <input type="text" placeholder="Email">
+        <input type="password" placeholder="Password">
+        <button>Login</button>
+    </div>
+</section>  
+</section>
+
+<!-- LIVE DETECT -->
+<section id="liveDetect" class="page-section">
+    <center>
+        <h1>Live Plant Detection</h1>
+        <p>Use your camera for real-time plant identification.</p>
+    </center>
+    
+    <div class="card live-card">
+        <div class="video-wrapper">
+            <video id="video" autoplay muted playsinline></video>
+        </div>
+
+        <div class="live-controls">
+            <button id="startCameraBtn">Start Camera</button>
+            <button id="stopCameraBtn" disabled>Stop Camera</button>
+        </div>
+
+        <p class="note">AI scanning plant features in real-time...</p>
+    </div>
+</section>
+
+
+<!-- PLANT CARE -->
+<section id="plantCare" class="page-section" >
+
+    <div class="plant-care-section">
+        <h2>Plant Care & Information</h2>
+        <p class="subtitle">Explore crops, care practices & prevention</p>
+
+        <div class="plant-care-grid">
+
+    <div class="plant-card" onclick="openPlantInfo('Rice')">
+        <img src="Rice.jpg">
+        <h3>Rice</h3>
+        <p>Staple cereal crop</p>
+    </div>
+
+    <div class="plant-card" onclick="openPlantInfo('Wheat')">
+        <img src="wheat.jpg">
+        <h3>Wheat</h3>
+        <p>Major food grain</p>
+    </div>
+
+    <div class="plant-card" onclick="openPlantInfo('Maize')">
+        <img src="Maize.jpg">
+        <h3>Maize</h3>
+        <p>Multi-purpose crop</p>
+    </div>
+
+    <div class="plant-card" onclick="openPlantInfo('Tomato')">
+        <img src="tomato.jpg">
+        <h3>Tomato</h3>
+        <p>Vegetable crop</p>
+    </div>
+
+    <div class="plant-card" onclick="openPlantInfo('Potato')">
+        <img src="potato.jpg">
+        <h3>Potato</h3>
+        <p>Tuber crop</p>
+    </div>
+
+    <div class="plant-card" onclick="openPlantInfo('Cotton')">
+        <img src="cotton.jpg">
+        <h3>Cotton</h3>
+        <p>Fiber crop</p>
+    </div>
+
+</div>
+</div>
+    <div id="plant-details" class="details hidden">
+        <h3 id="plant-name"></h3>
+        <p id="plant-info"></p>
+        <ul id="plant-prevention"></ul>
+    </div>
+</section>
+
+<!-- LOGIN / REGISTER -->
+<section id="auth" class="page-section" >
+    <h1>User Account</h1>
+    <p>Login or register to save your plant searches.</p>
+
+    <div class="auth-box">
+        <input type="text" placeholder="Email">
+        <input type="password" placeholder="Password">
+        <button>Login</button>
+
+        <p class="divider">OR</p>
+
+        <button class="secondary">Register</button>
+    </div>
+
+    <p class="note">
+        Logged-in users can bookmark plants and track past detections.
+    </p>
+</section>
+<!-- My profile -->
+<section id="myProfile" class="page-section">
+    <h1>My Dashboard</h1>
+    <p>Your activity and progress overview</p>
+
+    <div class="dashboard-grid">
+
+        <div class="dash-card">
+            <h3>🌿 Plants Reviewed</h3>
+            <p class="dash-value" id="plantsReviewed">0</p>
+        </div>
+
+        <div class="dash-card">
+            <h3>📷 Images Uploaded</h3>
+            <p class="dash-value" id="imagesUploaded">0</p>
+        </div>
+
+        <div class="dash-card">
+            <h3>📹 Live Detections</h3>
+            <p class="dash-value" id="liveDetections">0</p>
+        </div>
+
+        <div class="dash-card">
+            <h3>⭐ Bookmarked Plants</h3>
+            <p class="dash-value" id="bookmarked">0</p>
+        </div>
+
+    </div>
+    <div class="chart-section">
+    <h3>Activity Distribution</h3>
+    <canvas id="activityChart" width="300" height="300"></canvas>
+    <p class="note">All values start at zero until activity is recorded</p>
+</div>
+<div class="progress-section">
+    <h3>Progress Overview</h3>
+
+    <div class="progress-item">
+        <span>Plant Knowledge Progress</span>
+        <div class="progress-bar">
+            <div class="progress-fill" id="plantProgress"></div>
+        </div>
+    </div>
+
+    <div class="progress-item">
+        <span>Platform Usage</span>
+        <div class="progress-bar">
+            <div class="progress-fill" id="usageProgress"></div>
+        </div>
+    </div>
+</div>
+<div class="recent-activity">
+    <h3>Recent Activities</h3>
+    <ul id="activityLog">
+        <li>No activity yet</li>
+    </ul>
+</div>
+    <div class="future-features">
+        <h3>Upcoming Features</h3>
+        <ul>
+            <li>📊 Growth analytics</li>
+            <li>🌦 Weather-based suggestions</li>
+            <li>🔔 Care reminders</li>
+            <li>📁 Plant history export</li>
+        </ul>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>Contact</h4>
+            <p>Email: supportagroguard-ai@gmail.com</p>
+            <p>Phone: +91 9XXXXXXXXX</p>
+        </div>
+
+        <div class="footer-section">
+            <h4>Connect With Us</h4>
+            <div class="social-links">
+                <a href="https://www.instagram.com" target="_blank"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/instagram.svg"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg"></a>
+                <a href="https://twitter.com" target="_blank"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/twitter.svg"></a>
+                <a href="https://github.com" target="_blank"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/github.svg"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtube.svg"></a>
+            </div>
+        </div>
+    </div>
+
+    <p class="footer-bottom">© 2026 AgroGuard AI • Smart Agriculture Platform</p>
+</footer>
+
+<!-- Navigation Dots -->
+<div id="nav-dots"></div>
+
+
+
+
+<script src="script.js"></script>
+<div id="plantModal" class="plant-modal">
+    <div class="plant-modal-content">
+        <span class="close-btn" onclick="closePlantInfo()">×</span>
+        <h2 id="plantTitle"></h2>
+        <p id="plantDetails"></p>
+    </div>
+</div>
+
+</body>
+</html>
