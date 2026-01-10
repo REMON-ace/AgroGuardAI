@@ -56,16 +56,37 @@
     </div>
     </div>
 </section>
-<section class="quick-login">
-    <h2>Save Your Plant Searches</h2>
-    <p>Login to bookmark plants and track your activity.</p>
+<section class="quick-login" id="authSection">
+    <div class="auth-box">
+        <h2 id="authTitle">Login</h2>
+        <p id="authSubtitle">Welcome back! Login to your account</p>
 
-    <div class="auth-box small">
-        <input type="text" placeholder="Email">
+        <input type="email" placeholder="Email">
         <input type="password" placeholder="Password">
-        <button>Login</button>
+
+        <button onclick="fakeLogin()">Login</button>
+
+        <div class="divider">New User ? Create Account and Connect With Us</div>
+
+        <button class="secondary" onclick="showRegister()">
+            Create Account
+        </button>
     </div>
-</section>  
+</section>
+<section class="quick-login hidden" id="registerSection">
+    <div class="auth-box">
+        <h2>Create Account</h2>
+        <p>Register once to access your dashboard.</p>
+
+        <input type="text" placeholder="Full Name">
+        <input type="email" placeholder="Email">
+        <input type="password" placeholder="Password">
+
+        <button onclick="createAccount()">Register</button>
+    </div>
+</section>
+
+  
 </section>
 
 <!-- LIVE DETECT -->
@@ -149,15 +170,21 @@
     <h1>User Account</h1>
     <p>Login or register to save your plant searches.</p>
 
-    <div class="auth-box">
-        <input type="text" placeholder="Email">
-        <input type="password" placeholder="Password">
-        <button>Login</button>
+<div class="auth-box">
+    <h2 id="authTitle">Login</h2>
+    <p id="authSubtitle">Login to bookmark plants and track activity.</p>
 
-        <p class="divider">OR</p>
+    <input type="email" id="authEmail" placeholder="Email">
+    <input type="password" id="authPassword" placeholder="Password">
 
-        <button class="secondary">Register</button>
-    </div>
+    <button id="authActionBtn" class="primary-btn">Login</button>
+
+    <p class="auth-toggle">
+        New user?
+        <span onclick="switchToRegister()">Create an account</span>
+    </p>
+</div>
+
 
     <p class="note">
         Logged-in users can bookmark plants and track past detections.
