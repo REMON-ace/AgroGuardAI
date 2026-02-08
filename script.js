@@ -51,7 +51,7 @@ function showSection(sectionId) {
     target.style.display = "block";
     target.classList.add("active");
 
-    currentIndex = newIndex; // ✅ THIS WAS MISSING
+    currentIndex = newIndex; 
     updateNavDots();
     updateFooter(sectionId);
 
