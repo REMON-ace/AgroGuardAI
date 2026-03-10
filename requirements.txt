@@ -1,6 +1,6 @@
 flask
 tensorflow
-keras
-pillow
+opencv-python
 numpy
-flask-cors
+pillow
+scikit-learn
