@@ -1,0 +1,44 @@
+[
+  {
+    "disease": "leaf_spot",
+    "causes": ["Fungal infection in humid conditions"],
+    "prevention": ["Use resistant varieties", "Maintain proper spacing"],
+    "treatment": ["Apply fungicide", "Remove infected leaves"],
+    "severity": "moderate"
+  },
+  {
+    "disease": "rust",
+    "causes": ["Fungal spores spread by wind"],
+    "prevention": ["Plant resistant varieties", "Remove infected leaves"],
+    "treatment": ["Fungicide application", "Crop rotation"],
+    "severity": "moderate"
+  },
+  {
+    "disease": "early_blight",
+    "causes": ["Fungal pathogen Alternaria"],
+    "prevention": ["Proper spacing", "Avoid wet foliage"],
+    "treatment": ["Fungicide spray", "Remove infected leaves"],
+    "severity": "mild"
+  },
+  {
+    "disease": "late_blight",
+    "causes": ["Fungal pathogen Phytophthora infestans"],
+    "prevention": ["Avoid overhead watering", "Crop rotation"],
+    "treatment": ["Fungicide application", "Remove affected parts"],
+    "severity": "severe"
+  },
+  {
+    "disease": "bacterial_blight",
+    "causes": ["Bacterial infection via water or tools"],
+    "prevention": ["Sanitize tools", "Crop rotation"],
+    "treatment": ["Remove infected parts", "Copper-based spray"],
+    "severity": "moderate"
+  },
+  {
+    "disease": "powdery_mildew",
+    "causes": ["Fungal pathogen on leaves and stems"],
+    "prevention": ["Good airflow", "Resistant varieties"],
+    "treatment": ["Fungicide application", "Remove infected leaves"],
+    "severity": "mild"
+  }
+]
