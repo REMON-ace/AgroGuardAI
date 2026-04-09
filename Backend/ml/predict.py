@@ -1,88 +1,120 @@
-#!/usr/bin/env python3
-# ============================================================
-# ml/predict.py - Plant Disease Detection ML Model
-# ============================================================
-# This script receives an image path as argument,
-# runs it through a trained model, and prints JSON to stdout.
-#
-# Node.js backend calls this via child_process.spawn().
-#
-# HOW TO INTEGRATE YOUR REAL MODEL:
-#   1. Replace the stub logic below with your actual model code
-#   2. Install dependencies: pip install tensorflow pillow numpy
-#   3. Load your saved model (e.g. model.h5 or SavedModel folder)
-#   4. Run inference and print JSON to stdout
-# ============================================================
-
 import sys
 import json
 import os
+import numpy as np
 
-# ── Stub disease classes (replace with your model's classes) ──
-DISEASE_CLASSES = [
-    "Healthy",
-    "Early Blight",
-    "Late Blight",
-    "Powdery Mildew",
-    "Leaf Spot",
-    "Bacterial Blight",
-    "Rust",
-    "Mosaic Virus",
-]
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH  = os.path.join(SCRIPT_DIR, "plant_model.h5")
+LABELS_PATH = os.path.join(SCRIPT_DIR, "labels.json")
 
-REMEDY_MAP = {
-    "Healthy":          "Your plant looks healthy! Keep up the good care.",
-    "Early Blight":     "Apply fungicide (chlorothalonil). Remove infected leaves. Avoid overhead watering.",
-    "Late Blight":      "Apply systemic fungicide (metalaxyl). Destroy infected material. Ensure good drainage.",
-    "Powdery Mildew":   "Spray neem oil or potassium bicarbonate. Improve air circulation.",
-    "Leaf Spot":        "Apply copper-based fungicide. Remove affected leaves. Avoid wetting foliage.",
-    "Bacterial Blight": "Use copper bactericide. Sanitize tools. Avoid working when plants are wet.",
-    "Rust":             "Apply triazole fungicide. Remove infected leaves. Avoid evening watering.",
-    "Mosaic Virus":     "No cure – remove infected plants. Control aphids with neem oil.",
-}
+def generate_remedy(plant, condition):
+    if condition.lower() == "healthy":
+        return [
+            f"Your {plant} plant is perfectly healthy! No treatment needed.",
+            "Maintain a regular watering schedule tailored to climate conditions.",
+            "Ensure the plant continues to receive proper sunlight and soil nutrients.",
+            "Periodically check under leaves and around stems for early pest signs."
+        ]
+    
+    if "spot" in condition.lower() or "blight" in condition.lower():
+        return [
+            f"Apply an appropriate fungicide (like Copper-based or Chlorothalonil) specifically for {plant}.",
+            "Immediately prune and safely destroy any severely infected leaves.",
+            "Water the plant at the base to keep foliage dry, avoiding overhead irrigation.",
+            "Ensure adequate spacing between plants to significantly improve air circulation."
+        ]
+        
+    if "virus" in condition.lower() or "mosaic" in condition.lower():
+        return [
+            "There is no chemical cure for viral infections in plants.",
+            "Immediately remove and securely destroy the entire infected plant to protect others.",
+            "Sanitize all gardening tools with a 10% bleach solution after handling.",
+            "Control aphid and insect vectors using insecticidal soaps or neem oil."
+        ]
+        
+    if "mite" in condition.lower():
+        return [
+            "Apply a targeted miticide or pure neem oil to both sides of the leaves.",
+            "Regularly spray the foliage with a strong jet of water to physically dislodge mites.",
+            "Increase environmental humidity if possible, as mites thrive in extremely dry conditions.",
+            "Prune heavily infested growth to save the rest of the plant."
+        ]
+        
+    if "mold" in condition.lower() or "mildew" in condition.lower():
+        return [
+            "Apply a sulfur-based fungicide or potassium bicarbonate spray.",
+            "Dramatically improve air ventilation around the foliage by selective pruning.",
+            "Avoid dampness by watering only in the morning.",
+            "Clear away fallen debris from the base of the plant to eliminate spore resting sites."
+        ]
 
+    # General diseased remedy fallback
+    return [
+        f"Isolate the affected {plant} immediately to prevent spread to neighboring crops.",
+        "Consult a local agronomist or extension office for highly targeted chemical controls.",
+        "Remove all visually diseased foliage and stems using sterilized pruning shears.",
+        "Apply a broad-spectrum organic biopesticide or neem oil as a first line of defense."
+    ]
+
+def clean_class_name(raw_name):
+    if "PlantVillage" in raw_name or "background" in raw_name.lower():
+        return "Unrecognized Pattern", "Unknown Background Object"
+        
+    lower_raw = raw_name.lower()
+    if "cotton" in lower_raw:
+        condition = "Diseased" if "disease" in lower_raw else "Healthy"
+        return "Cotton", condition
+        
+    # Example: "Tomato___Spider_mites_Two_spotted_spider_mite"
+    name = raw_name.replace("___", " - ").replace("__", " ").replace("_", " ")
+    name = name.replace("Two spotted spider mite", "(Two Spotted Spider Mite)")
+    
+    parts = name.split(" - ")
+    plant = parts[0].strip().title()
+    condition = parts[1].strip().title() if len(parts) > 1 else "Unknown Issue"
+        
+    return plant, condition
 
 def predict_disease(image_path):
-    """
-    ── REAL MODEL INTEGRATION ──────────────────────────────────
-    Uncomment and adapt this block when your model is ready:
+    if os.path.exists(MODEL_PATH) and os.path.exists(LABELS_PATH):
+        from tensorflow.keras.models import load_model
+        from tensorflow.keras.preprocessing import image as keras_image
+        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-    import numpy as np
-    from tensorflow.keras.models import load_model
-    from tensorflow.keras.preprocessing import image as keras_image
+        with open(LABELS_PATH, "r") as f:
+            index_to_class = json.load(f)
 
-    MODEL_PATH = os.path.join(os.path.dirname(__file__), 'plant_model.h5')
-    model = load_model(MODEL_PATH)
+        try:
+            model = load_model(MODEL_PATH)
+        except Exception:
+            return { "disease": "Error Loading Model", "confidence": 0, "remedy": ["System failure."] }
 
-    img = keras_image.load_img(image_path, target_size=(224, 224))
-    img_array = keras_image.img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+        img = keras_image.load_img(image_path, target_size=(224, 224))
+        img_array = keras_image.img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = preprocess_input(img_array)
 
-    predictions = model.predict(img_array)[0]
-    class_idx   = int(np.argmax(predictions))
-    confidence  = float(predictions[class_idx])
+        predictions = model.predict(img_array, verbose=0)[0]
+        class_idx = int(np.argmax(predictions))
+        confidence = float(predictions[class_idx])
 
-    disease = DISEASE_CLASSES[class_idx]
-    remedy  = REMEDY_MAP.get(disease, "Consult an agronomist.")
+        raw_label = index_to_class.get(str(class_idx), "Unknown")
+        plant, condition = clean_class_name(raw_label)
+        
+        disease_string = f"{plant}: {condition}" if plant != "Unrecognized Pattern" else condition
 
-    return {"disease": disease, "confidence": round(confidence * 100, 2), "remedy": remedy}
-    ── END REAL MODEL ───────────────────────────────────────────
-    """
-
-    # ── STUB: returns a mock result until real model is added ──
-    # Uses filename hash to pick a consistent (fake) disease
-    file_hash   = sum(ord(c) for c in os.path.basename(image_path))
-    idx         = file_hash % len(DISEASE_CLASSES)
-    disease     = DISEASE_CLASSES[idx]
-    confidence  = round(70.0 + (file_hash % 25), 2)  # 70–95%
-    remedy      = REMEDY_MAP.get(disease, "Consult an agronomist.")
+        return {
+            "disease":    disease_string,
+            "confidence": round(confidence * 100, 2),
+            "remedy":     "\n".join(generate_remedy(plant, condition)),
+            "_debug_raw": raw_label
+        }
 
     return {
-        "disease":    disease,
-        "confidence": confidence,
-        "remedy":     remedy,
+        "disease":    "⚠️ Model Still Training",
+        "confidence": 0,
+        "remedy":     "The actual predictive AI is still physically training in the background.\nPlease wait for plant_model.h5 to generation completion.\nTry your image again in about 5 minutes."
     }
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -96,4 +128,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     result = predict_disease(image_path)
-    print(json.dumps(result))   # Node.js reads this stdout
+    print(json.dumps(result))

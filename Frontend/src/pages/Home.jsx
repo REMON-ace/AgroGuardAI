@@ -1,5 +1,5 @@
 // src/pages/Home.jsx
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "../components/AuthModal";
@@ -15,8 +15,14 @@ export default function Home() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [longLoad, setLongLoad] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef();
+
+  // Ensure page always starts at the top when navigating or refreshing
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleFile = (e) => {
     const f = e.target.files[0];
@@ -31,6 +37,10 @@ export default function Home() {
     if (!isLoggedIn) return setShowAuth(true);
     if (!file) return setError("Please select an image first.");
     setLoading(true); setError("");
+
+    // Show a hint message if analysis takes longer than 3 seconds
+    const timeoutMsg = setTimeout(() => setLongLoad(true), 3000);
+
     try {
       const fd = new FormData();
       fd.append("image", file);
@@ -39,6 +49,8 @@ export default function Home() {
     } catch (err) {
       setError(err.response?.data?.message || "Detection failed. Try again.");
     } finally {
+      clearTimeout(timeoutMsg);
+      setLongLoad(false);
       setLoading(false);
     }
   };
@@ -96,18 +108,17 @@ export default function Home() {
 />
             {error && <div className="error-msg">{error}</div>}
 
-            {result && (
-              <div style={styles.resultBox}>
-                <p style={styles.resultLabel}>Detection Result</p>
-                <p style={styles.resultDisease}>{result.disease}</p>
-                <p style={styles.resultConf}>Confidence: <strong>{result.confidence}%</strong></p>
-                <p style={styles.resultRemedy}>{result.remedy}</p>
-              </div>
-            )}
+            {/* Replaced internal inline result box with full screen modal render below */}
 
             <button className="btn-primary" style={{ width: "100%", marginTop: 12 }} disabled={loading} onClick={handleDetect}>
-              {loading ? "Analyzing…" : "Detect Disease"}
+              {loading ? "Analyzing Image..." : "Detect Disease"}
             </button>
+            
+            {longLoad && (
+              <p style={{ fontSize: 11, color: '#6a876a', marginTop: 10, textAlign: 'center', fontStyle: 'italic' }}>
+                Note: The deep learning engine takes a few seconds to warm up. Please hold on...
+              </p>
+            )}
 
             {!isLoggedIn && (
               <p style={{ fontSize: 13, color: "#6a876a", marginTop: 10, textAlign: "center" }}>
@@ -121,6 +132,75 @@ export default function Home() {
           </button>
         </div>
       </section>
+
+      {/* Result Full Screen Overlay Modal */}
+      {result && (
+        <div style={styles.resultOverlay}>
+          <div style={{...styles.resultModal, position: 'relative'}} className="fade-up">
+            
+            {/* Elegant Top-Right Cross Button */}
+            <button 
+              style={{ position: 'absolute', top: 16, right: 24, fontSize: 32, background: 'none', border: 'none', cursor: 'pointer', color: '#888', lineHeight: 1 }}
+              onClick={() => {
+                setResult(null);
+                setFile(null);
+                setPreview(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              title="Close"
+            >
+              &times;
+            </button>
+
+            <div style={styles.resultModalLeft}>
+              <img src={preview} alt="uploaded plant" style={styles.resultModalImg} />
+            </div>
+
+            <div style={styles.resultModalRight}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <p style={styles.resultLabel}>Detection Analysis Details</p>
+                <span style={{ background: '#c8e6c9', color: '#1b5e20', padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 'bold' }}>
+                  Confidence: {result.confidence}%
+                </span>
+              </div>
+              
+              <h3 style={{ fontSize: 32, fontWeight: 800, color: '#1b5e20', marginBottom: 10 }}>
+                {result.disease}
+              </h3>
+
+              {result.confidence < 50 && (
+                <div style={{ background: '#fff3e0', borderLeft: '4px solid #ff9800', padding: 12, marginBottom: 16, borderRadius: 4 }}>
+                  <p style={{ margin: 0, fontSize: 13, color: '#e65100' }}>
+                    <strong>Low Confidence:</strong> The AI isn't completely certain. Accuracy will improve immensely as background training finishes optimizing over your dataset!
+                  </p>
+                </div>
+              )}
+                
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#2e7d32', marginBottom: 10, marginTop: 24 }}>Suggested Prevention & Care:</p>
+              <ul style={{ paddingLeft: 24, margin: 0 }}>
+                {result.remedy.split('\n').map((step, idx) => (
+                  <li key={idx} style={{ fontSize: 15, color: "#444", marginBottom: 10, lineHeight: 1.5 }}>{step}</li>
+                ))}
+              </ul>
+
+              <div style={{ marginTop: 'auto', paddingTop: 30 }}>
+                <button 
+                  className="btn-primary" 
+                  style={{ width: "100%", padding: "16px", fontSize: 16, boxShadow: "0 10px 20px rgba(0,0,0,.15)" }} 
+                  onClick={() => {
+                    setResult(null);
+                    setFile(null);
+                    setPreview(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  📸 Analyze Another Image
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Marquee */}
         <div style={styles.marqueeWrap}>
@@ -165,11 +245,12 @@ const styles = {
   uploadCard: { background: "rgba(255,255,255,.95)", borderRadius: 18, padding: 24, boxShadow: "0 20px 60px rgba(0,0,0,.3)" },
   uploadBox: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "2px dashed #81c784", borderRadius: 12, padding: 20, minHeight: 120, cursor: "pointer", background: "#f9fff9", marginBottom: 10 },
   previewImg: { width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 },
-  resultBox: { background: "#e8f5e9", borderRadius: 10, padding: 14, marginBottom: 8, textAlign: "left" },
-  resultLabel: { fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#4a7c4a", marginBottom: 4 },
-  resultDisease: { fontSize: 18, fontWeight: 700, color: "#1b5e20", marginBottom: 2 },
-  resultConf: { fontSize: 13, color: "#3d5a3d", marginBottom: 6 },
-  resultRemedy: { fontSize: 13, color: "#555", lineHeight: 1.6 },
+  resultLabel: { fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#4a7c4a", marginBottom: 4 },
+  resultOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", justifyContent: "center", alignItems: "center", padding: 20, backdropFilter: "blur(8px)" },
+  resultModal: { background: "white", borderRadius: 24, padding: 30, width: "100%", maxWidth: 1000, display: "flex", gap: 40, boxShadow: "0 30px 90px rgba(0,0,0,.4)", overflow: "hidden", flexDirection: "row", flexWrap: "wrap", maxHeight: '90vh', overflowY: 'auto' },
+  resultModalLeft: { flex: "1 1 300px", display: "flex", flexDirection: "column" },
+  resultModalRight: { flex: "2 1 400px", display: "flex", flexDirection: "column", justifyContent: "center" },
+  resultModalImg: { width: "100%", height: "100%", maxHeight: 500, objectFit: "cover", borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,.1)" },
   marqueeWrap: { background: "#f6fff7", height: 130, overflow: "hidden", display: "flex", alignItems: "center" },
   marqueeTrack: { display: "flex",width: "max-content",gap: 30},
   marqueeItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6 },
