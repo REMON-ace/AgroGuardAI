@@ -25,6 +25,7 @@ export default function Navbar() {
   const { isLoggedIn, logout, user } = useAuth();
 
 
+
       useEffect(() => {
     const handleKey = (e) => {
       const currentIndex = routesOrder.indexOf(location.pathname);
@@ -51,6 +52,8 @@ export default function Navbar() {
     logout();
     navigate("/");
   };
+
+  if (isLoggedIn && user?.role === 'admin') return null;
 
   return (
     <header style={styles.nav}>

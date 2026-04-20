@@ -76,8 +76,8 @@ export default function Profile() {
         {/* Stats cards */}
         {[
           { label: "Total Scans",    value: history.length },
-          { label: "Diseases Found", value: history.filter((h) => h.disease_name !== "Healthy" && h.disease_name !== "Unknown").length },
-          { label: "Healthy Plants", value: history.filter((h) => h.disease_name === "Healthy").length },
+          { label: "Diseases Found", value: history.filter((h) => !h.disease_name.toLowerCase().includes("healthy") && h.disease_name !== "Unknown" && !h.disease_name.toLowerCase().includes("not a valid plant")).length },
+          { label: "Healthy Plants", value: history.filter((h) => h.disease_name.toLowerCase().includes("healthy")).length },
           { label: "Member Since",   value: user?.created_at ? new Date(user.created_at).toLocaleDateString("en-IN", { month: "short", year: "numeric" }) : "—" },
         ].map((c) => (
           <div key={c.label} style={styles.statCard}>

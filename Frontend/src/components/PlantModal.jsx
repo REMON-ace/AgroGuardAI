@@ -15,7 +15,7 @@ export default function PlantModal({ plantName, disease, onClose }) {
     setError("");
 
     getPlantCareInfo(disease)
-      .then((res) => setInfo(res.data)) // Axios response
+      .then((res) => setInfo(res.data.data)) // Axios response wraps careInfo in res.data.data
       .catch(() => {
         // fallback to local JSON
         const fallback = plantLocalData.find(p => p.disease === disease);

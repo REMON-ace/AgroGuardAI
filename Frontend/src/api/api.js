@@ -39,4 +39,27 @@ export const getProfile      = ()     => api.get("/profile");
 export const updateProfile   = (data) => api.put("/profile", data);
 export const changePassword  = (data) => api.put("/profile/change-password", data);
 
+// ── Admin ────────────────────────────────────────────────────
+export const getDashboardStats    = ()   => api.get("/admin/dashboard-stats");
+export const getAdminUsers        = ()   => api.get("/admin/users");
+export const deleteAdminUser      = (id) => api.delete(`/admin/users/${id}`);
+export const getAdminDetections   = (params) => api.get("/admin/detections", { params });
+export const deleteAdminDetection = (id) => api.delete(`/admin/detections/${id}`);
+export const getDetectionDetails  = (id) => api.get(`/admin/log/${id}`);
+export const getAnalytics         = ()   => api.get("/admin/analytics");
+
+export const exportLogs = async () => {
+  const token = localStorage.getItem("agroguard_token");
+  const response = await fetch("http://localhost:5000/api/admin/export", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error("Failed to export");
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "detection_logs.csv";
+  a.click();
+};
+
 export default api;

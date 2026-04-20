@@ -98,6 +98,14 @@ def predict_disease(image_path):
         class_idx = int(np.argmax(predictions))
         confidence = float(predictions[class_idx])
 
+        if confidence < 0.65:
+            return {
+                "disease":    "Not a Valid Plant",
+                "confidence": round(confidence * 100, 2),
+                "remedy":     "We couldn't clearly identify a valid plant leaf. Please align the plant inside the green box and try capturing again.",
+                "_debug_raw": "Below Threshold"
+            }
+
         raw_label = index_to_class.get(str(class_idx), "Unknown")
         plant, condition = clean_class_name(raw_label)
         

@@ -83,6 +83,11 @@ export default function LiveDetect() {
         {/* Video feed */}
         <div style={styles.videoWrap}>
           <video ref={videoRef} autoPlay muted playsInline style={styles.video} />
+          {stream && (
+            <div style={styles.captureGuide}>
+               <p style={styles.guideText}>Place leaf securely in box</p>
+            </div>
+          )}
           {!stream && (
             <div style={styles.placeholder}>
               <span style={{ fontSize: 48 }}>📷</span>
@@ -135,9 +140,11 @@ export default function LiveDetect() {
 }
 
 const styles = {
-  videoWrap:     { width: "100%", height: 280, borderRadius: 12, overflow: "hidden", background: "#111", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" },
-  video:         { width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" },
-  placeholder:   { position: "absolute", textAlign: "center", color: "#aaa" },
+  videoWrap:     { width: "100%", height: 320, borderRadius: 12, overflow: "hidden", background: "#111", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" },
+  video:         { width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)", zIndex: 1 },
+  captureGuide:  { position: "absolute", top: "15%", bottom: "15%", left: "20%", right: "20%", border: "3px dashed #4caf50", borderRadius: 16, boxShadow: "0 0 0 9999px rgba(0,0,0,0.6)", zIndex: 5, pointerEvents: "none", display: "flex", justifyContent: "center", alignItems: "flex-end" },
+  guideText:     { color: "#fff", backgroundColor: "rgba(0,0,0,0.5)", padding: "4px 8px", borderRadius: 4, fontSize: 11, marginBottom: 10, letterSpacing: 1 },
+  placeholder:   { position: "absolute", textAlign: "center", color: "#aaa", zIndex: 2 },
   controls:      { display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" },
   resultBox:     { background: "#e8f5e9", borderRadius: 12, padding: 18, marginTop: 16 },
   resultTag:     { fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase", color: "#4a7c4a", marginBottom: 4 },

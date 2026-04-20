@@ -8,12 +8,26 @@ import Home        from "./pages/Home";
 import PlantCare   from "./pages/PlantCare";
 import LiveDetect  from "./pages/LiveDetect";
 import Profile     from "./pages/Profile";
+import AdminPanel  from "./pages/AdminPanel"; // <-- IMPORT ADMIN PANEL
 
-// Redirect to /login if not logged in
 function ProtectedRoute({ children }) {
   const { isLoggedIn, ready } = useAuth();
   if (!ready) return null;
   return isLoggedIn ? children : <Navigate to="/" replace />;
+}
+
+// Redirect to admin dashboard if an admin tries accessing user pages
+function UserBoundRoute({ children }) {
+  const { isLoggedIn, ready, user } = useAuth();
+  if (!ready) return null;
+  return (isLoggedIn && user?.role === 'admin') ? <Navigate to="/admin/dashboard" replace /> : children;
+}
+
+// Redirect to / if not an admin
+function AdminRoute({ children }) {
+  const { isLoggedIn, ready, user } = useAuth();
+  if (!ready) return null;
+  return (isLoggedIn && user?.role === 'admin') ? children : <Navigate to="/" replace />;
 }
 
 function AppInner() {
@@ -22,10 +36,11 @@ function AppInner() {
       <Navbar />
       <NavDots />
       <Routes>
-        <Route path="/"            element={<Home />} />
-        <Route path="/plant-care"  element={<PlantCare />} />
-        <Route path="/live-detect" element={<LiveDetect />} />
-        <Route path="/profile"     element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/"            element={<UserBoundRoute><Home /></UserBoundRoute>} />
+        <Route path="/plant-care"  element={<ProtectedRoute><UserBoundRoute><PlantCare /></UserBoundRoute></ProtectedRoute>} />
+        <Route path="/live-detect" element={<ProtectedRoute><UserBoundRoute><LiveDetect /></UserBoundRoute></ProtectedRoute>} />
+        <Route path="/profile"     element={<ProtectedRoute><UserBoundRoute><Profile /></UserBoundRoute></ProtectedRoute>} />
+        <Route path="/admin/*"     element={<AdminRoute><AdminPanel /></AdminRoute>} />
       </Routes>
       <Footer />
     </BrowserRouter>

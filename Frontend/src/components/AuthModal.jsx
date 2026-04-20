@@ -1,5 +1,6 @@
 // src/components/AuthModal.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth }  from "../context/AuthContext";
 import { login as apiLogin, register as apiRegister } from "../api/api";
 
@@ -11,7 +12,9 @@ export default function AuthModal({ onClose }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState("");
+  const [loginRole, setLoginRole] = useState("user");
   const { loginSave } = useAuth();
+  const navigate = useNavigate();
 
   const clearMessages = () => { setError(""); setSuccess(""); };
 
@@ -62,9 +65,12 @@ export default function AuthModal({ onClose }) {
         setMode("login");
         setSuccess("Account created! You can now log in with your email and password.");
       } else {
-        const res = await apiLogin({ email: email.trim().toLowerCase(), password });
+        const res = await apiLogin({ email: email.trim().toLowerCase(), password, loginRole });
         loginSave(res.data.token, res.data.user);
         onClose?.();
+        if (res.data.user.role === 'admin') {
+          navigate("/admin/dashboard");
+        }
       }
     } catch (err) {
       setError(parseError(err));
@@ -122,6 +128,17 @@ export default function AuthModal({ onClose }) {
           onChange={(e) => { clearMessages(); setPassword(e.target.value); }}
           onKeyDown={handleKeyDown}
         />
+
+        {mode === "login" && (
+          <div style={{ display: 'flex', gap: '15px', margin: '15px 0', fontSize: '15px', color: '#333' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+              <input type="radio" value="user" checked={loginRole === 'user'} onChange={(e) => setLoginRole(e.target.value)} /> User
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+              <input type="radio" value="admin" checked={loginRole === 'admin'} onChange={(e) => setLoginRole(e.target.value)} /> Admin
+            </label>
+          </div>
+        )}
 
         <button
           className="btn-primary"

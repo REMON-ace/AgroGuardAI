@@ -1,0 +1,80 @@
+# AgroGuard AI: Complete Project Architecture & Documentation
+
+Welcome to the technical overview of the AgroGuard AI platform. 
+
+This document serves as your complete guide to understanding how all the different components—from the React Web UI down to the neural network parameters—communicate to deliver a production-ready application.
+
+---
+
+## 1. Top-Level Ecosystem
+At a high level, the project observes a classic **MERN/Python Hybrid** architecture:
+*   **Frontend (UI):** Built using **React.js**. It manages user routes, live video feeds, dashboards, and authentication states.
+*   **Backend (API Server):** Built on **Node.js & Express.js**. It processes HTTP requests, acts as the gatekeeper for security (JWTs), talks to the database, and executes Python subprocesses.
+*   **Database (Storage):** A **MySQL** relational database storing users and a history log of all scans/detections.
+*   **Machine Learning (AI Engine):** Written in **Python** using `TensorFlow/Keras`. It contains both the heavy training loops and the lightweight diagnostic inference scripts.
+
+---
+
+## 2. Directory & Component Breakdown
+
+### A. Frontend (`/Frontend`)
+The user-facing Single Page Application (SPA).
+*   `src/api/api.js` - The central nerve center for HTTP requests. Every time the frontend needs data, it routes through `axios` here (e.g., `detectDisease()`, `getAnalytics()`).
+*   `src/context/AuthContext.jsx` - A global React context provider. It wraps your app and remembers who is logged in across all tabs using strict `localStorage` tokens.
+*   `src/components/`
+    *   `AuthModal.jsx` - The pop-up handling user and admin sign-ups/logins.
+*   `src/pages/`
+    *   `LiveDetect.jsx` - Utilizing the browser's `navigator.mediaDevices.getUserMedia()`, this handles parsing the live camera feed, painting it inside a bounding box, drawing frames via HTML `<canvas>`, and extracting `.jpeg` blobs to send to the backend.
+    *   `AdminPanel.jsx` - A deeply nested modular dashboard exclusive for admins. It heavily utilizes `react-chartjs-2` to paint metrics fetched via the admin controllers.
+
+### B. Backend (`/Backend`)
+The Express API responsible for business logic.
+
+*   `config/db.js` - Initiates a `mysql2/promise` connection pool. Allows asynchronous SQL querying heavily utilized across all routes.
+*   `middleware/`
+    *   `authMiddleware.js` - Checks for the existence of `Bearer [JWT]` headers and decodes them. Rejects unauthorized access.
+    *   `adminMiddleware.js` - Checks the decoded JWT parameter `req.user.role === 'admin'`. Only allows access if true.
+*   `models/`
+    *   `userModel.js` & `detectionModel.js` - Data abstraction layers holding raw SQL `INSERT INTO`, `SELECT`, and `DELETE` commands to keep controllers clean.
+*   `controllers/`
+    *   `authController.js` - Handlers for password hashing (`bcrypt`) and JWT signing.
+    *   `detectController.js` - *The core bridge.* Takes physical image uploads (`req.file`), drops them into the `/uploads` bin, directly spawns a `child_process` invoking `python predict.py`, awaits the stdout, and logs the result to MySQL.
+    *   `adminController.js` - Heavily aggregated DB query controllers supplying statistics, `.csv` exports, and chart nodes.
+*   `uploads/` - The physical resting place for `multer` captured `.jpg` frames.
+*   `database/setup.sql` - The schema definitions defining the `users` and `detections` tables with pre-seeded values.
+
+### C. Machine Learning Engine (`/Backend/ml/`)
+The Python environment responsible for agricultural diagnosis.
+
+*   `predict.py`
+    The inference engine. Rather than loading the model heavily into the Express thread, Express triggers this python script momentarily.
+    *   Loads an image using `keras.preprocessing`.
+    *   Validates it against `labels.json`.
+    *   Enforces a strict confidence minimum (`> 65%`) to throw out invalid inputs.
+    *   Prints standard `JSON` directly to the `stdout` pipe, which Express reads, parses, and returns to the React frontend.
+*   `train_model.py`
+    The heavy-lifting pipeline. 
+    *   Employs **Transfer Learning** using `MobileNetV2` (a pre-trained ImageNet model highly optimized for low-end devices/speed).
+    *   Transforms thousands of raw images traversing via an `ImageDataGenerator`.
+    *   Fine-tunes the base model by adjusting top layers dynamically against agriculture-specific loss functions over 25 epochs.
+*   `plant_model.h5` - The resulting frozen neural network brain outputted by `train_model.py`.
+*   `labels.json` - Automatically generated map ensuring class 5 always relates to "Tomato Bacterial Spot", etc.
+
+---
+
+## 3. The Lifecycle of a Plant Scan (End-to-End)
+To understand how it all fits together, here is the lifecycle of a basic action:
+
+1.  **Capture**: The user positions a leaf in the green box via `LiveDetect.jsx` and clicks capture. React takes a snapshot frame and packages it as heavily compressed `FormData`.
+2.  **Transport**: `api.js` adds the user's JWT logic and POSTs the image to `/api/detect`.
+3.  **Reception**: The `/Backend` receives the packet. `authMiddleware` validates their identity. The router hands the image to `detectController.js`.
+4.  **Inference**: The Node.js controller spawns a bash request passing the image directly to `python ml/predict.py`.
+5.  **Neural Compute**: `predict.py` boots `plant_model.h5`, cleans the image, pushes it through the CNN, rejects it if under 65% logical certainty, and prints `{ disease, remedies }` into the pipeline.
+6.  **Storage**: The Node.js controller catches the Python printout. It inserts the diagnosis and the image filepath straight into MySQL (`models/detectionModel`).
+7.  **Delivery**: Node.js returns HTTP 200 OK along with the string details to React.
+8.  **UI Render**: React's state populates with the disease traits and remedy strings, beautifully wiping the camera and rendering a success interface!
+
+---
+
+> [!TIP]
+> The beauty of this architecture is **modularity**. If you ever decide to replace the Python neural network with an advanced API (like OpenAI vision), the entire React Frontend, MySQL DB, and routing structure remain completely unchanged! You only have to alter the `predict.py` sub-script.

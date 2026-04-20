@@ -48,8 +48,8 @@ IMG_HEIGHT    = 224
 IMG_WIDTH     = 224
 CHANNELS      = 3
 BATCH_SIZE    = 32
-EPOCHS        = 5           # Reduced to 5 for fast transfer learning
-LEARNING_RATE = 0.001
+EPOCHS        = 25          # Increased for deeper fine-tuning
+LEARNING_RATE = 0.0001     # Lower rate for safe fine-tuning
 
 print("=" * 60)
 print("  AgroGuard AI — Plant Disease Model Training")
@@ -141,46 +141,67 @@ print(f"\n  Saved class labels to: {LABELS_PATH}")
 #   Custom Head: GlobalAveragePooling -> Dense layers -> Softmax
 # ============================================================
 
-print("\n[2/5] Building Enhanced CNN model (MobileNetV2)...")
+print("\n[2/5] Initializing Enhanced CNN model...")
 
 def build_cnn(num_classes, img_height, img_width, channels):
     from tensorflow.keras.applications import MobileNetV2
     
-    # Load the pre-trained MobileNetV2 model, excluding its top classification layer
     base_model = MobileNetV2(
         weights="imagenet", 
         include_top=False, 
         input_shape=(img_height, img_width, channels)
     )
     
-    # Freeze the base model layers so they don't get updated during early training
-    base_model.trainable = False
+    # Unfreeze the top layers for domain-specific fine-tuning
+    base_model.trainable = True
+    fine_tune_at = 100 # Freeze the first 100 foundation layers, unlock the rest
+    for layer in base_model.layers[:fine_tune_at]:
+        layer.trainable = False
     
-    model = models.Sequential([
+    m = models.Sequential([
         base_model,
-        # Convert feature maps to a flat vector
         layers.GlobalAveragePooling2D(),
-
-        # Fully connected layers for classification
         layers.Dense(512, activation="relu"),
         layers.BatchNormalization(),
         layers.Dropout(0.5),
-
         layers.Dense(256, activation="relu"),
         layers.Dropout(0.3),
-
-        # Output: one probability per class
         layers.Dense(num_classes, activation="softmax"),
     ])
-    return model
+    return m
 
-model = build_cnn(NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, CHANNELS)
-
-model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-    loss="categorical_crossentropy",
-    metrics=["accuracy"],
-)
+if os.path.exists(MODEL_PATH):
+    print(f"  [+] Existing model found at {MODEL_PATH}. Resuming training...")
+    from tensorflow.keras.models import load_model
+    try:
+        model = load_model(MODEL_PATH)
+        
+        # Unlock layers for fine-tuning on the loaded model
+        base_m = model.layers[0]
+        base_m.trainable = True
+        for layer in base_m.layers[:100]:
+            layer.trainable = False
+            
+        print("  [+] Re-compiling optimizer variables...")
+        import tensorflow as tf
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE), 
+            loss="categorical_crossentropy", 
+            metrics=["accuracy"]
+        )
+    except Exception as e:
+        print("  [!] Failed to load model. Building fresh...", e)
+        model = build_cnn(NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, CHANNELS)
+        import tensorflow as tf
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE), loss="categorical_crossentropy", metrics=["accuracy"])
+else:
+    print("  [+] No existing model found. Building fresh CNN...")
+    model = build_cnn(NUM_CLASSES, IMG_HEIGHT, IMG_WIDTH, CHANNELS)
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
 
 model.summary()
 print(f"\n  Total parameters: {model.count_params():,}")
@@ -228,10 +249,8 @@ print("-" * 60)
 
 history = model.fit(
     train_generator,
-    steps_per_epoch=100,      # Train on a random subset of 3,200 images per epoch for speed
     epochs=EPOCHS,
     validation_data=val_generator,
-    validation_steps=20,      # Validate on a subset of 640 images
     callbacks=callbacks,
     verbose=2,
 )

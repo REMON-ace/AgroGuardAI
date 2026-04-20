@@ -10,7 +10,7 @@ const User = require('../models/userModel');
 // ── Helper: generate JWT token ───────────────────────────────
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email },
+    { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
@@ -99,7 +99,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { email, password, loginRole } = req.body;
 
     // Missing fields
     if (!email || !password) {
@@ -127,6 +127,14 @@ const login = async (req, res, next) => {
       });
     }
 
+    // Verify role if trying to login as admin
+    if (loginRole === 'admin' && user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Not an admin',
+      });
+    }
+
     const token = generateToken(user);
 
     res.status(200).json({
@@ -137,6 +145,7 @@ const login = async (req, res, next) => {
         id:    user.id,
         name:  user.name,
         email: user.email,
+        role:  user.role,
       },
     });
 
